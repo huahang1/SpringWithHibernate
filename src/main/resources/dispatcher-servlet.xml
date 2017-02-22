@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+    <context:component-scan base-package="com.chris" />
+
+
+    <mvc:annotation-driven />
+
+    <!--InternalResourceViewResolver is the default view solver for JSP, if you want to apply html here, put the html under the static resources folder-->
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+    <mvc:resources mapping="/resources/**" location="/WEB-INF/resources/"/>
+
+    <!--For database connection using Apache commons-->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost:3306/TestToCreateTable"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123"/>
+    </bean>
+
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!--this configuration way is not recommended because we have already define the specific annotations-->
+
+        <!--<property name="annotatedClasses">-->
+            <!--<list>-->
+                <!--<value>com.chris.model.Person</value>-->
+                <!--<value>com.chris.model.Card</value>-->
+            <!--</list>-->
+        <!--</property>-->
+
+        <property name="packagesToScan" value="com.chris.model"/>
+
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+                <prop key="hibernate.show_sql">true</prop>
+
+                <!--We have to use add hibernate.hbm2ddlauto instead of hbm2ddlauto.add, otherwise the table will never be created-->
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+
+                <!--Populate tables with data-->
+                <prop key="hibernate.hbm2ddl.import_files">import.sql</prop>
+            </props>
+        </property>
+    </bean>
+
+
+    <bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!--use the annotation to support for transaction manager-->
+    <!--use proxy-target-class="true" to avoid runtime error, this enables the proxies based on classes -->
+    <tx:annotation-driven proxy-target-class="true" transaction-manager="transactionManager"/>
+
+</beans>
